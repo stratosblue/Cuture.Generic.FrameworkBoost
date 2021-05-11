@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Microsoft.Extensions\Microsoft.Extensions.csproj" />
+  </ItemGroup>
+</Project>
