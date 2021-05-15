@@ -3,12 +3,100 @@
 namespace System.Tests.ObjectCopy
 {
     [TestClass]
-    public class GenericObjectCopyTest
+    public class GenericObjectCopyTest : ObjectCopyTestBase
     {
-        #region Public 方法
+        #region Copy From Struct
 
         [TestMethod]
-        public void Copy_IgnoreCase_All()
+        public void Copy_IgnoreCase_All_FromStruct()
+        {
+            var struct1 = CreateObjectCopyStruct1();
+            var obj2 = CreateObjectCopyClass2();
+
+            var struct1_back = struct1;
+
+            obj2.CopyFrom(ref struct1, ignoreCase: true, nonPublic: true);
+
+            Assert.IsTrue(struct1.Equals(struct1_back));
+
+            Assert.IsTrue(string.Equals(struct1.PublicFields, obj2.PublicFields, StringComparison.Ordinal));
+            Assert.IsTrue(string.Equals(struct1.PublicProperty, obj2.PublicProperty, StringComparison.Ordinal));
+            Assert.IsTrue(string.Equals(struct1.GetPrivateFieldsValue(), obj2.GetPrivateFieldsValue(), StringComparison.Ordinal));
+            Assert.IsTrue(string.Equals(struct1.GetPrivatePropertyValue(), obj2.GetPrivatePropertyValue(), StringComparison.Ordinal));
+            Assert.IsTrue(string.Equals(struct1.SpecialProperty, obj2.GetSpecialPropertyValue(), StringComparison.Ordinal));
+            Assert.IsTrue(string.Equals(struct1.casefields, obj2.CaseFields, StringComparison.Ordinal));
+            Assert.IsTrue(string.Equals(struct1.caseproperty, obj2.CaseProperty, StringComparison.Ordinal));
+        }
+
+        [TestMethod]
+        public void Copy_IgnoreCase_PublicOnly_FromStruct()
+        {
+            var struct1 = CreateObjectCopyStruct1();
+            var obj2 = CreateObjectCopyClass2();
+
+            var struct1_back = struct1;
+
+            obj2.CopyFrom(ref struct1, ignoreCase: true);
+
+            Assert.IsTrue(struct1.Equals(struct1_back));
+
+            Assert.IsTrue(string.Equals(struct1.PublicFields, obj2.PublicFields, StringComparison.Ordinal));
+            Assert.IsTrue(string.Equals(struct1.PublicProperty, obj2.PublicProperty, StringComparison.Ordinal));
+            Assert.AreEqual(null, obj2.GetPrivateFieldsValue());
+            Assert.AreEqual(null, obj2.GetPrivatePropertyValue());
+            Assert.IsTrue(string.Equals(struct1.SpecialProperty, obj2.GetSpecialPropertyValue(), StringComparison.Ordinal));
+            Assert.IsTrue(string.Equals(struct1.casefields, obj2.CaseFields, StringComparison.Ordinal));
+            Assert.IsTrue(string.Equals(struct1.caseproperty, obj2.CaseProperty, StringComparison.Ordinal));
+        }
+
+        [TestMethod]
+        public void Copy_NoIgnoreCase_All_FromStruct()
+        {
+            var struct1 = CreateObjectCopyStruct1();
+            var obj2 = CreateObjectCopyClass2();
+
+            var struct1_back = struct1;
+
+            obj2.CopyFrom(ref struct1, ignoreCase: false, nonPublic: true);
+
+            Assert.IsTrue(struct1.Equals(struct1_back));
+
+            Assert.IsTrue(string.Equals(struct1.PublicFields, obj2.PublicFields, StringComparison.Ordinal));
+            Assert.IsTrue(string.Equals(struct1.PublicProperty, obj2.PublicProperty, StringComparison.Ordinal));
+            Assert.IsTrue(string.Equals(struct1.GetPrivateFieldsValue(), obj2.GetPrivateFieldsValue(), StringComparison.Ordinal));
+            Assert.IsTrue(string.Equals(struct1.GetPrivatePropertyValue(), obj2.GetPrivatePropertyValue(), StringComparison.Ordinal));
+            Assert.IsTrue(string.Equals(struct1.SpecialProperty, obj2.GetSpecialPropertyValue(), StringComparison.Ordinal));
+            Assert.AreEqual(null, obj2.CaseFields);
+            Assert.AreEqual(null, obj2.CaseProperty);
+        }
+
+        [TestMethod]
+        public void Copy_NoIgnoreCase_PublicOnly_FromStruct()
+        {
+            var struct1 = CreateObjectCopyStruct1();
+            var obj2 = CreateObjectCopyClass2();
+
+            var struct1_back = struct1;
+
+            obj2.CopyFrom(ref struct1);
+
+            Assert.IsTrue(struct1.Equals(struct1_back));
+
+            Assert.IsTrue(string.Equals(struct1.PublicFields, obj2.PublicFields, StringComparison.Ordinal));
+            Assert.IsTrue(string.Equals(struct1.PublicProperty, obj2.PublicProperty, StringComparison.Ordinal));
+            Assert.AreEqual(null, obj2.GetPrivateFieldsValue());
+            Assert.AreEqual(null, obj2.GetPrivatePropertyValue());
+            Assert.IsTrue(string.Equals(struct1.SpecialProperty, obj2.GetSpecialPropertyValue(), StringComparison.Ordinal));
+            Assert.AreEqual(null, obj2.CaseFields);
+            Assert.AreEqual(null, obj2.CaseProperty);
+        }
+
+        #endregion Copy From Struct
+
+        #region Copy From Class
+
+        [TestMethod]
+        public void Copy_IgnoreCase_All_FromClass()
         {
             var obj1 = CreateObjectCopyClass1();
             var obj2 = CreateObjectCopyClass2();
@@ -30,7 +118,7 @@ namespace System.Tests.ObjectCopy
         }
 
         [TestMethod]
-        public void Copy_IgnoreCase_PublicOnly()
+        public void Copy_IgnoreCase_PublicOnly_FromClass()
         {
             var obj1 = CreateObjectCopyClass1();
             var obj2 = CreateObjectCopyClass2();
@@ -52,7 +140,7 @@ namespace System.Tests.ObjectCopy
         }
 
         [TestMethod]
-        public void Copy_NoIgnoreCase_All()
+        public void Copy_NoIgnoreCase_All_FromClass()
         {
             var obj1 = CreateObjectCopyClass1();
             var obj2 = CreateObjectCopyClass2();
@@ -74,7 +162,7 @@ namespace System.Tests.ObjectCopy
         }
 
         [TestMethod]
-        public void Copy_NoIgnoreCase_PublicOnly()
+        public void Copy_NoIgnoreCase_PublicOnly_FromClass()
         {
             var obj1 = CreateObjectCopyClass1();
             var obj2 = CreateObjectCopyClass2();
@@ -95,46 +183,6 @@ namespace System.Tests.ObjectCopy
             Assert.AreEqual(null, obj2.CaseProperty);
         }
 
-        #endregion Public 方法
-
-        #region Private 方法
-
-        private static ObjectCopyClass1 CreateObjectCopyClass1()
-        {
-            var obj1 = new ObjectCopyClass1("privateFields", "privateProperty", "specialProperty")
-            {
-                PublicFields = nameof(ObjectCopyClass1.PublicFields),
-                PublicProperty = nameof(ObjectCopyClass1.PublicProperty),
-                casefields = nameof(ObjectCopyClass1.casefields),
-                caseproperty = nameof(ObjectCopyClass1.caseproperty),
-            };
-
-            Assert.IsFalse(string.IsNullOrEmpty(obj1.PublicFields));
-            Assert.IsFalse(string.IsNullOrEmpty(obj1.PublicProperty));
-            Assert.IsFalse(string.IsNullOrEmpty(obj1.GetPrivateFieldsValue()));
-            Assert.IsFalse(string.IsNullOrEmpty(obj1.GetPrivatePropertyValue()));
-            Assert.IsFalse(string.IsNullOrEmpty(obj1.SpecialProperty));
-            Assert.IsFalse(string.IsNullOrEmpty(obj1.casefields));
-            Assert.IsFalse(string.IsNullOrEmpty(obj1.caseproperty));
-
-            return obj1;
-        }
-
-        private static ObjectCopyClass2 CreateObjectCopyClass2()
-        {
-            var obj2 = new ObjectCopyClass2();
-
-            Assert.AreEqual(null, obj2.PublicFields);
-            Assert.AreEqual(null, obj2.PublicProperty);
-            Assert.AreEqual(null, obj2.GetPrivateFieldsValue());
-            Assert.AreEqual(null, obj2.GetPrivatePropertyValue());
-            Assert.AreEqual(null, obj2.GetSpecialPropertyValue());
-            Assert.AreEqual(null, obj2.CaseFields);
-            Assert.AreEqual(null, obj2.CaseProperty);
-
-            return obj2;
-        }
-
-        #endregion Private 方法
+        #endregion Copy From Class
     }
 }
