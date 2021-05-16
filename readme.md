@@ -12,6 +12,7 @@
 |Microsoft.Extensions|针对 Microsoft.Extensions.* 官方库的拓展|
 |System|针对 System 命名空间的功能拓展|
 |System.Collections|针对 System.Collections 命名空间的功能拓展|
+|System.Threading|针对 System.Threading 命名空间的功能拓展|
 
 -------
 
@@ -24,3 +25,4 @@
 | ObjectCopyExtensions | System | 快速将源对象的字段、属性赋值到目标对象的同名、同类型的字段、属性的拓展方法 |
 | DeferFlushCollection | System.Collections.Concurrent | 延时冲洗集合 |
 | AsyncCallbackDeferFlushCollection | System.Collections.Concurrent | 异步回调的延时冲洗集合 |
+| ExclusiveThreadTaskScheduler | System.Threading.Tasks | 独占一个线程的TaskScheduler，所有调用都在同一线程上执行 |

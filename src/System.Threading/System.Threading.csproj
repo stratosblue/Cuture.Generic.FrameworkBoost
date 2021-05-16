@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>$(AssemblyName).System.Collections</AssemblyName>
+  </PropertyGroup>
+</Project>

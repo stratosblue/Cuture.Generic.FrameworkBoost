@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\System.Threading\System.Threading.csproj" />
+  </ItemGroup>
+</Project>
