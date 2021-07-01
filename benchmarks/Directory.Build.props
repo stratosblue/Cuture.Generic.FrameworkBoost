@@ -3,14 +3,11 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <IsPackable>false</IsPackable>
-
-    <LangVersion>9.0</LangVersion>
 
     <RootNamespace>Benchmark</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="BenchmarkDotNet" Version="0.12.1" />
+    <PackageReference Include="BenchmarkDotNet" Version="*" />
   </ItemGroup>
 </Project>
