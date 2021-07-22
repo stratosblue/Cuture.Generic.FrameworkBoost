@@ -66,6 +66,21 @@
             StructToObjectCopy<TSource, TDestination>.Copy(source, destination);
         }
 
+        /// <inheritdoc cref="ObjectCopyExtensions.CopyTo{TSource, TDestination}(TSource, TDestination)"/>
+        public static TDestination CopyTo<TSource, TDestination>(this TSource source) where TSource : class where TDestination : class, new()
+        {
+            if (source is null)
+            {
+                throw new ArgumentNullException(nameof(source));
+            }
+
+            TDestination destination = new();
+
+            ObjectCopy<TSource, TDestination>.Copy(source, destination);
+
+            return destination;
+        }
+
         /// <summary>
         /// 将源对象的字段、属性赋值到目标对象的同名、同类型的字段、属性
         /// </summary>
@@ -86,6 +101,23 @@
             }
 
             ObjectCopy<TSource, TDestination>.Copy(source, destination);
+        }
+
+        /// <inheritdoc cref="ObjectCopyExtensions.CopyTo{TSource, TDestination}(TSource, TDestination, bool, bool)"/>
+        public static TDestination CopyTo<TSource, TDestination>(this TSource source,
+                                                                 bool ignoreCase = false,
+                                                                 bool nonPublic = false) where TSource : class where TDestination : class, new()
+        {
+            if (source is null)
+            {
+                throw new ArgumentNullException(nameof(source));
+            }
+
+            TDestination destination = new();
+
+            source.CopyTo(destination, ignoreCase: ignoreCase, nonPublic: nonPublic);
+
+            return destination;
         }
 
         /// <summary>

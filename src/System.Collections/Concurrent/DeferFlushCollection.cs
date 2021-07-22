@@ -150,8 +150,16 @@ namespace System.Collections.Concurrent
             {
                 _disposedValue = true;
 
-                _autoFlushCTS.Cancel(true);
-                _autoFlushCTS.Dispose();
+                try
+                {
+                    _autoFlushCTS.Cancel();
+                }
+                catch { }
+                finally
+                {
+                    _autoFlushCTS.Dispose();
+                }
+
                 _autoFlushCTS = null!;
             }
         }
@@ -175,7 +183,7 @@ namespace System.Collections.Concurrent
 
             while (!token.IsCancellationRequested)
             {
-                var interval = (DateTime.UtcNow - _lastFlushTime);
+                var interval = DateTime.UtcNow - _lastFlushTime;
                 if (interval < FlushInterval)
                 {
                     await Task.Delay(FlushInterval - interval, token).ConfigureAwait(false);
