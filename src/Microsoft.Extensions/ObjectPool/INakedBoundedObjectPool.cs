@@ -4,7 +4,7 @@
     /// 可直接借用、归还的对象池，不使用<see cref="IObjectOwner{T}"/>
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public interface INakedBoundedObjectPool<T> : IRecyclePool<T>, IDirectBoundedObjectPool<T> where T : class
+    public interface INakedBoundedObjectPool<T> : IRecyclePool<T>, IDirectBoundedObjectPool<T>
     {
     }
 }

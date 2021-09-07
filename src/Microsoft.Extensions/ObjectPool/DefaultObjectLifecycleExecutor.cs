@@ -6,7 +6,7 @@ namespace Microsoft.Extensions.ObjectPool
     /// 默认对象生命周期执行器
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public sealed class DefaultObjectLifecycleExecutor<T> : IObjectLifecycleExecutor<T> where T : class, new()
+    public sealed class DefaultObjectLifecycleExecutor<T> : IObjectLifecycleExecutor<T> where T : new()
     {
         #region Public 方法
 

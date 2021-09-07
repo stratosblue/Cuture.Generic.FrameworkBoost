@@ -4,7 +4,7 @@
     /// 回收池
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public interface IRecyclePool<T> where T : class
+    public interface IRecyclePool<T>
     {
         #region Public 方法
 

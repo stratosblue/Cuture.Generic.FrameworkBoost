@@ -4,7 +4,7 @@
     /// 对象生命周期执行器
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public interface IObjectLifecycleExecutor<T> where T : class
+    public interface IObjectLifecycleExecutor<T>
     {
         #region Public 方法
 
