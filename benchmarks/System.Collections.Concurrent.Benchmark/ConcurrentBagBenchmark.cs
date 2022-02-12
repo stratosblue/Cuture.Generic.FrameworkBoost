@@ -7,7 +7,7 @@ using BenchmarkDotNet.Jobs;
 
 namespace Benchmark
 {
-    [SimpleJob(RuntimeMoniker.NetCoreApp50)]
+    [SimpleJob(RuntimeMoniker.Net60)]
     [MemoryDiagnoser]
     public class ConcurrentBagBenchmark
     {
