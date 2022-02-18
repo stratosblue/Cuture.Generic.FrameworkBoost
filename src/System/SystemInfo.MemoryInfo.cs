@@ -196,39 +196,44 @@ namespace System
         /// <summary>
         /// 内存使用百分比
         /// </summary>
-        public readonly uint MemoryLoad;
+        public readonly uint MemoryLoad = default;
 
         /// <summary>
         /// 总物理内存
         /// </summary>
-        public readonly StorageSize TotalPhysical;
+        public readonly StorageSize TotalPhysical = default;
 
         /// <summary>
         /// 可用物理内存
         /// </summary>
-        public readonly StorageSize AvailablePhysical;
+        public readonly StorageSize AvailablePhysical = default;
 
         /// <summary>
         /// 总页面文件
         /// </summary>
-        public readonly StorageSize TotalPageFile;
+        public readonly StorageSize TotalPageFile = default;
 
         /// <summary>
         /// 可用页面文件
         /// </summary>
-        public readonly StorageSize AvailablePageFile;
+        public readonly StorageSize AvailablePageFile = default;
 
         /// <summary>
         /// 总虚拟内存
         /// </summary>
-        public readonly StorageSize TotalVirtual;
+        public readonly StorageSize TotalVirtual = default;
 
         /// <summary>
         /// 可用虚拟内存
         /// </summary>
-        public readonly StorageSize AvailableVirtual;
+        public readonly StorageSize AvailableVirtual = default;
 
-        private readonly ulong _ullAvailExtendedVirtual;
+        private readonly ulong _ullAvailExtendedVirtual = default;
+
+        /// <inheritdoc cref="WindowsNativeMemoryInfo"/>
+        public WindowsNativeMemoryInfo()
+        {
+        }
     }
 
     /// <summary>
