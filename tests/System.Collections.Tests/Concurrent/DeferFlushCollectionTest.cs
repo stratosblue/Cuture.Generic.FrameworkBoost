@@ -60,6 +60,24 @@ namespace System.Collections.Tests.Concurrent
             Assert.AreEqual(count, deferFlushCollection.ItemCount);
         }
 
+        [TestMethod]
+        public async Task WriteOneItemTestAsync()
+        {
+            var interval = TimeSpan.FromMilliseconds(400);
+
+            var deferFlushCollection = new DefaultDeferFlushCollection(100, interval);
+
+            deferFlushCollection.Append(1);
+
+            await Task.Delay(interval + TimeSpan.FromMilliseconds(100));
+
+            Console.WriteLine($"Collection Count: {deferFlushCollection.All.Sum(m => m.Count())}");
+            Console.WriteLine($"Flush Count: {deferFlushCollection.FlushCount}");
+
+            Assert.AreEqual(1, deferFlushCollection.FlushCount);
+            Assert.AreEqual(1, deferFlushCollection.ItemCount);
+        }
+
         #endregion Public ·½·¨
     }
 }

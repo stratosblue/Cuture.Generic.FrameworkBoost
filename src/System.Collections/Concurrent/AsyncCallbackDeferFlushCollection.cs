@@ -11,14 +11,14 @@ namespace System.Collections.Concurrent
     {
         #region Private 字段
 
-        private readonly Func<Memory<T>, CancellationToken, Task> _flushCallback;
+        private readonly Func<ReadOnlyMemory<T>, CancellationToken, Task> _flushCallback;
 
         #endregion Private 字段
 
         #region Public 构造函数
 
         /// <inheritdoc cref="AsyncCallbackDeferFlushCollection{T}"/>
-        public AsyncCallbackDeferFlushCollection(Func<Memory<T>, CancellationToken, Task> flushCallback, int flushThreshold, TimeSpan flushInterval) : base(flushThreshold, flushInterval)
+        public AsyncCallbackDeferFlushCollection(Func<ReadOnlyMemory<T>, CancellationToken, Task> flushCallback, int flushThreshold, TimeSpan flushInterval) : base(flushThreshold, flushInterval)
         {
             _flushCallback = flushCallback ?? throw new ArgumentNullException(nameof(flushCallback));
         }
@@ -28,7 +28,7 @@ namespace System.Collections.Concurrent
         #region Protected 方法
 
         /// <inheritdoc/>
-        protected override async Task FlushAsync(Memory<T> items, CancellationToken token) => await _flushCallback(items, token).ConfigureAwait(false);
+        protected override async Task FlushAsync(ReadOnlyMemory<T> items, CancellationToken token) => await _flushCallback(items, token).ConfigureAwait(false);
 
         #endregion Protected 方法
     }

@@ -25,7 +25,7 @@ namespace System.Collections.Tests.Concurrent
 
         #region Protected 方法
 
-        protected override Task FlushAsync(Memory<int> items, CancellationToken token)
+        protected override Task FlushAsync(ReadOnlyMemory<int> items, CancellationToken token)
         {
             All.Add(items.Span.ToArray());
             var count = items.Length;

@@ -26,7 +26,7 @@ namespace System.Collections.Concurrent
         /// <summary>
         /// 数组索引
         /// </summary>
-        private int _index = -1;
+        private int _index = 0;
 
         private T[] _items;
 
@@ -42,7 +42,7 @@ namespace System.Collections.Concurrent
         /// <summary>
         /// 元素总数
         /// </summary>
-        public int Count => _index + 1;
+        public int Count => _index;
 
         /// <summary>
         /// 定时触发间隔
@@ -52,7 +52,7 @@ namespace System.Collections.Concurrent
         /// <summary>
         /// 触发阈值
         /// </summary>
-        public int FlushThreshold => _flushThreshold + 1;
+        public int FlushThreshold => _flushThreshold;
 
         #endregion Public 属性
 
@@ -75,8 +75,8 @@ namespace System.Collections.Concurrent
                 throw new ArgumentOutOfRangeException(nameof(flushInterval));
             }
 
-            _flushThreshold = flushThreshold - 1;
-            _items = new T[_flushThreshold + 1];
+            _flushThreshold = flushThreshold;
+            _items = new T[flushThreshold];
 
             FlushInterval = flushInterval;
 
@@ -105,14 +105,13 @@ namespace System.Collections.Concurrent
         /// 添加数据到集合
         /// </summary>
         /// <param name="item"></param>
-        public void Append(T item)
+        public void Append(in T item)
         {
             CheckDisposed();
 
             lock (_syncRoot)
             {
-                _index++;
-                _items[_index] = item;
+                _items[_index++] = item;
                 if (_index < _flushThreshold)
                 {
                     return;
@@ -170,7 +169,7 @@ namespace System.Collections.Concurrent
         /// <param name="items">项目列表</param>
         /// <param name="token"></param>
         /// <returns></returns>
-        protected abstract Task FlushAsync(Memory<T> items, CancellationToken token);
+        protected abstract Task FlushAsync(ReadOnlyMemory<T> items, CancellationToken token);
 
         #endregion Protected 方法
 
@@ -254,9 +253,9 @@ namespace System.Collections.Concurrent
             _lastFlushTime = DateTime.UtcNow;
             if (_index > 0)
             {
-                count = _index + 1;
-                _index = -1;
-                return Interlocked.Exchange(ref _items, new T[_flushThreshold + 1]);
+                count = _index;
+                _index = 0;
+                return Interlocked.Exchange(ref _items, new T[_flushThreshold]);
             }
             count = 0;
             return Array.Empty<T>();
