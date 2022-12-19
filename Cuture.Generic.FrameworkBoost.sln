@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.31025.194
+# Visual Studio Version 17
+VisualStudioVersion = 17.4.33205.214
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "System.Collections", "src\System.Collections\System.Collections.csproj", "{85AABC8E-80A0-482A-AA5F-04CE39A034A6}"
 EndProject
@@ -61,9 +61,13 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Syntax", "Syntax", "{7DA850
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Syntax.InParameterModifier.Benchmark", "benchmarks\Syntax.InParameterModifier.Benchmark\Syntax.InParameterModifier.Benchmark.csproj", "{A2C70C77-B2B1-48A7-9459-2036DB59FD32}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "System.Threading", "src\System.Threading\System.Threading.csproj", "{61926899-C883-49E2-B2D4-FD93F81C3259}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "System.Threading", "src\System.Threading\System.Threading.csproj", "{61926899-C883-49E2-B2D4-FD93F81C3259}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "System.Threading.Tests", "tests\System.Threading.Tests\System.Threading.Tests.csproj", "{E5EE89FD-B251-4306-A050-A79042E293AC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "System.Threading.Tests", "tests\System.Threading.Tests\System.Threading.Tests.csproj", "{E5EE89FD-B251-4306-A050-A79042E293AC}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Task", "Task", "{CF9B6F61-D43D-436E-8877-926A08C0F231}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "System.Threading.Task.Benchmark", "benchmarks\System.Threading.Task.Benchmark\System.Threading.Task.Benchmark.csproj", "{F6E83488-2612-4CA2-84DD-3D6A1F73C033}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -115,6 +119,10 @@ Global
 		{E5EE89FD-B251-4306-A050-A79042E293AC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E5EE89FD-B251-4306-A050-A79042E293AC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E5EE89FD-B251-4306-A050-A79042E293AC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F6E83488-2612-4CA2-84DD-3D6A1F73C033}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F6E83488-2612-4CA2-84DD-3D6A1F73C033}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F6E83488-2612-4CA2-84DD-3D6A1F73C033}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F6E83488-2612-4CA2-84DD-3D6A1F73C033}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -139,6 +147,8 @@ Global
 		{A2C70C77-B2B1-48A7-9459-2036DB59FD32} = {7DA85009-61F2-445C-9361-4905DE1B2344}
 		{61926899-C883-49E2-B2D4-FD93F81C3259} = {485B3045-6AC6-45C2-8A9F-E8B09364CF14}
 		{E5EE89FD-B251-4306-A050-A79042E293AC} = {88B9C5B4-8E6F-4F5D-8CE6-2AFBA2F5E719}
+		{CF9B6F61-D43D-436E-8877-926A08C0F231} = {8703B951-DB8A-4BBE-B0D6-141CA9C640C8}
+		{F6E83488-2612-4CA2-84DD-3D6A1F73C033} = {CF9B6F61-D43D-436E-8877-926A08C0F231}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {C5AA265E-2996-4EE8-8E16-AF30D8D897DB}
