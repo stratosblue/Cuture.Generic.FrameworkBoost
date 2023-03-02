@@ -1,16 +1,15 @@
 ﻿using BenchmarkDotNet.Running;
 
-namespace Benchmark
+namespace Benchmark;
+
+internal class Program
 {
-    internal class Program
+    #region Private 方法
+
+    private static void Main(string[] args)
     {
-        #region Private 方法
-
-        private static void Main(string[] args)
-        {
-            BenchmarkRunner.Run<SpinLockGeneralBenchmark>();
-        }
-
-        #endregion Private 方法
+        BenchmarkRunner.Run<SpinLockGeneralBenchmark>();
     }
+
+    #endregion Private 方法
 }

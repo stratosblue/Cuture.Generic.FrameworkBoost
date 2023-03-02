@@ -1,137 +1,132 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using System.Collections.Concurrent;
 
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Jobs;
 
-namespace Benchmark
+namespace Benchmark;
+
+[SimpleJob(RuntimeMoniker.Net60)]
+[MemoryDiagnoser]
+public class ConcurrentDictionaryBenchmark
 {
-    [SimpleJob(RuntimeMoniker.Net60)]
-    [MemoryDiagnoser]
-    public class ConcurrentDictionaryBenchmark
+    #region Private 字段
+
+    private readonly Guid[] _allKeys;
+    private readonly object _data = new();
+
+    #endregion Private 字段
+
+    #region Public 属性
+
+    [Params(4, 8)]
+    public int MaxDegreeOfParallelism { get; set; }
+
+    #endregion Public 属性
+
+    #region Public 构造函数
+
+    public ConcurrentDictionaryBenchmark()
     {
-        #region Private 字段
+        _allKeys = Enumerable.Range(0, 1_000_000).Select(m => Guid.NewGuid()).ToArray();
+    }
 
-        private readonly Guid[] _allKeys;
-        private readonly object _data = new();
+    #endregion Public 构造函数
 
-        #endregion Private 字段
+    #region Public 方法
 
-        #region Public 属性
+    [Benchmark]
+    public void ConcurrentDictionary_Parallel_GetOrAdd()
+    {
+        var dic = new ConcurrentDictionary<Guid, object>();
 
-        [Params(4, 8)]
-        public int MaxDegreeOfParallelism { get; set; }
-
-        #endregion Public 属性
-
-        #region Public 构造函数
-
-        public ConcurrentDictionaryBenchmark()
+        Parallel.For(0, _allKeys.Length, GetParallelOptions(), i =>
         {
-            _allKeys = Enumerable.Range(0, 1_000_000).Select(m => Guid.NewGuid()).ToArray();
-        }
+            dic.GetOrAdd(_allKeys[i], _data);
+        });
+    }
 
-        #endregion Public 构造函数
+    [Benchmark]
+    public void ConcurrentDictionary_Parallel_TryAdd()
+    {
+        var dic = new ConcurrentDictionary<Guid, object>();
 
-        #region Public 方法
-
-        [Benchmark]
-        public void ConcurrentDictionary_Parallel_GetOrAdd()
+        Parallel.For(0, _allKeys.Length, GetParallelOptions(), i =>
         {
-            var dic = new ConcurrentDictionary<Guid, object>();
+            dic.TryAdd(_allKeys[i], _data);
+        });
+    }
 
-            Parallel.For(0, _allKeys.Length, GetParallelOptions(), i =>
-            {
-                dic.GetOrAdd(_allKeys[i], _data);
-            });
-        }
+    [Benchmark]
+    public void ConcurrentDictionary_Parallel_TryAdd_Conflict()
+    {
+        var dic = new ConcurrentDictionary<Guid, object>();
 
-        [Benchmark]
-        public void ConcurrentDictionary_Parallel_TryAdd()
+        Parallel.For(0, _allKeys.Length - 1, GetParallelOptions(), i =>
         {
-            var dic = new ConcurrentDictionary<Guid, object>();
+            dic.TryAdd(_allKeys[i], _data);
+            dic.TryAdd(_allKeys[i + 1], _data);
+        });
+    }
 
-            Parallel.For(0, _allKeys.Length, GetParallelOptions(), i =>
+    [Benchmark]
+    public void Dictionary_Parallel_TryAdd_WithLock()
+    {
+        var dic = new Dictionary<Guid, object>();
+
+        Parallel.For(0, _allKeys.Length, GetParallelOptions(), i =>
+        {
+            lock (_data)
             {
                 dic.TryAdd(_allKeys[i], _data);
-            });
-        }
+            }
+        });
+    }
 
-        [Benchmark]
-        public void ConcurrentDictionary_Parallel_TryAdd_Conflict()
+    [Benchmark]
+    public void Dictionary_Parallel_TryAdd_WithLock_Conflict()
+    {
+        var dic = new Dictionary<Guid, object>();
+
+        Parallel.For(0, _allKeys.Length - 1, GetParallelOptions(), i =>
         {
-            var dic = new ConcurrentDictionary<Guid, object>();
-
-            Parallel.For(0, _allKeys.Length - 1, GetParallelOptions(), i =>
+            lock (_data)
             {
                 dic.TryAdd(_allKeys[i], _data);
                 dic.TryAdd(_allKeys[i + 1], _data);
-            });
-        }
-
-        [Benchmark]
-        public void Dictionary_Parallel_TryAdd_WithLock()
-        {
-            var dic = new Dictionary<Guid, object>();
-
-            Parallel.For(0, _allKeys.Length, GetParallelOptions(), i =>
-            {
-                lock (_data)
-                {
-                    dic.TryAdd(_allKeys[i], _data);
-                }
-            });
-        }
-
-        [Benchmark]
-        public void Dictionary_Parallel_TryAdd_WithLock_Conflict()
-        {
-            var dic = new Dictionary<Guid, object>();
-
-            Parallel.For(0, _allKeys.Length - 1, GetParallelOptions(), i =>
-            {
-                lock (_data)
-                {
-                    dic.TryAdd(_allKeys[i], _data);
-                    dic.TryAdd(_allKeys[i + 1], _data);
-                }
-            });
-        }
-
-        [Benchmark]
-        public void Dictionary_Parallel_TryAdd_WithLock_GetOrAdd()
-        {
-            var dic = new Dictionary<Guid, object>();
-
-            Parallel.For(0, _allKeys.Length, GetParallelOptions(), i =>
-            {
-                var key = _allKeys[i];
-                lock (_data)
-                {
-                    if (!dic.TryGetValue(key, out var data))
-                    {
-                        data = _data;
-                        dic.Add(key, data);
-                    }
-                }
-            });
-        }
-
-        #endregion Public 方法
-
-        #region Private 方法
-
-        private ParallelOptions GetParallelOptions()
-        {
-            return new ParallelOptions()
-            {
-                MaxDegreeOfParallelism = MaxDegreeOfParallelism
-            };
-        }
-
-        #endregion Private 方法
+            }
+        });
     }
+
+    [Benchmark]
+    public void Dictionary_Parallel_TryAdd_WithLock_GetOrAdd()
+    {
+        var dic = new Dictionary<Guid, object>();
+
+        Parallel.For(0, _allKeys.Length, GetParallelOptions(), i =>
+        {
+            var key = _allKeys[i];
+            lock (_data)
+            {
+                if (!dic.TryGetValue(key, out var data))
+                {
+                    data = _data;
+                    dic.Add(key, data);
+                }
+            }
+        });
+    }
+
+    #endregion Public 方法
+
+    #region Private 方法
+
+    private ParallelOptions GetParallelOptions()
+    {
+        return new ParallelOptions()
+        {
+            MaxDegreeOfParallelism = MaxDegreeOfParallelism
+        };
+    }
+
+    #endregion Private 方法
 }

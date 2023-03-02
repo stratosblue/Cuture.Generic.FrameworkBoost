@@ -1,18 +1,15 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿namespace System.Tests;
 
-namespace System.Tests
+[TestClass]
+public class SystemInfoTest
 {
-    [TestClass]
-    public class SystemInfoTest
+    #region Public 方法
+
+    [TestMethod]
+    public void GenericUsage()
     {
-        #region Public 方法
-
-        [TestMethod]
-        public void GenericUsage()
-        {
-            SystemInfo.Display();
-        }
-
-        #endregion Public 方法
+        SystemInfo.Display();
     }
+
+    #endregion Public 方法
 }

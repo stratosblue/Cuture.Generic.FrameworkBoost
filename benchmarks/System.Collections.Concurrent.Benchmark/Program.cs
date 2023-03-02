@@ -1,14 +1,13 @@
 ﻿using BenchmarkDotNet.Running;
 
-namespace Benchmark
+namespace Benchmark;
+
+class Program
 {
-    class Program
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
-        {
-            BenchmarkRunner.Run<GeneralBenchmark>();
-            BenchmarkRunner.Run<ConcurrentBagBenchmark>();
-            BenchmarkRunner.Run<ConcurrentDictionaryBenchmark>();
-        }
+        BenchmarkRunner.Run<GeneralBenchmark>();
+        BenchmarkRunner.Run<ConcurrentBagBenchmark>();
+        BenchmarkRunner.Run<ConcurrentDictionaryBenchmark>();
     }
 }

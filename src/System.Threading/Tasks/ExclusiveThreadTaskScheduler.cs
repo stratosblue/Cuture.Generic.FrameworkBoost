@@ -1,263 +1,261 @@
 ﻿using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Diagnostics;
 
-namespace System.Threading.Tasks
+namespace System.Threading.Tasks;
+
+/// <summary>
+/// 独占线程任务调度器
+/// <para/>
+/// 内部将会独占一个线程
+/// <para/>
+/// 通过该调度器执行的所有操作都在此独占线程上执行
+/// </summary>
+public class ExclusiveThreadTaskScheduler : TaskScheduler, IDisposable
 {
+    #region Private 字段
+
+    private readonly Queue<Func<Task?>> _actionQueue = new(Environment.ProcessorCount * 2);
+    private readonly AutoResetEvent _actionQueueWaitEvent = new(false);
+    private readonly CancellationTokenSource _runningCancellationTokenSource;
+    private readonly CancellationToken _runningToken;
+    private readonly Thread _thread;
+    private readonly int _threadId;
+    private bool _disposedValue;
+
+    #endregion Private 字段
+
+    #region Public 属性
+
     /// <summary>
-    /// 独占线程任务调度器
-    /// <para/>
-    /// 内部将会独占一个线程
-    /// <para/>
-    /// 通过该调度器执行的所有操作都在此独占线程上执行
+    /// 是否跨线程调用
     /// </summary>
-    public class ExclusiveThreadTaskScheduler : TaskScheduler, IDisposable
+    public bool InvokeRequired => Thread.CurrentThread.ManagedThreadId != _threadId;
+
+    /// <summary>
+    /// 独占线程的托管线程ID
+    /// </summary>
+    public int ManagedThreadId => _threadId;
+
+    #endregion Public 属性
+
+    #region Public 构造函数
+
+    /// <inheritdoc cref="ExclusiveThreadTaskScheduler"/>
+    public ExclusiveThreadTaskScheduler()
     {
-        #region Private 字段
+        _runningCancellationTokenSource = new CancellationTokenSource();
+        _runningToken = _runningCancellationTokenSource.Token;
 
-        private readonly Queue<Func<Task?>> _actionQueue = new(Environment.ProcessorCount * 2);
-        private readonly AutoResetEvent _actionQueueWaitEvent = new(false);
-        private readonly CancellationTokenSource _runningCancellationTokenSource;
-        private readonly CancellationToken _runningToken;
-        private readonly Thread _thread;
-        private readonly int _threadId;
-        private bool _disposedValue;
-
-        #endregion Private 字段
-
-        #region Public 属性
-
-        /// <summary>
-        /// 是否跨线程调用
-        /// </summary>
-        public bool InvokeRequired => Thread.CurrentThread.ManagedThreadId != _threadId;
-
-        /// <summary>
-        /// 独占线程的托管线程ID
-        /// </summary>
-        public int ManagedThreadId => _threadId;
-
-        #endregion Public 属性
-
-        #region Public 构造函数
-
-        /// <inheritdoc cref="ExclusiveThreadTaskScheduler"/>
-        public ExclusiveThreadTaskScheduler()
+        _thread = new Thread(InternalWork)
         {
-            _runningCancellationTokenSource = new CancellationTokenSource();
-            _runningToken = _runningCancellationTokenSource.Token;
+            IsBackground = true,
+        };
 
-            _thread = new Thread(InternalWork)
+        //传递弱引用到工作线程，避免强引用，使析构函数能够触发
+        _thread.Start(new WeakReference<ExclusiveThreadTaskScheduler>(this));
+        _threadId = _thread.ManagedThreadId;
+    }
+
+    #endregion Public 构造函数
+
+    #region Public 方法
+
+    /// <summary>
+    /// 在此调度器的独占线程上同步执行委托
+    /// </summary>
+    /// <param name="action"></param>
+    public void Run(Action action)
+    {
+        ThrowIfDisposed();
+
+        if (InvokeRequired)
+        {
+            using ManualResetEventSlim eventSlim = new(false);
+            Exception? exception = null;
+            lock (_actionQueue)
             {
-                IsBackground = true,
-            };
+                _actionQueue.Enqueue(() =>
+                {
+                    try
+                    {
+                        action();
+                    }
+                    catch (Exception ex)
+                    {
+                        exception = ex;
+                    }
+                    finally
+                    {
+                        eventSlim.Set();
+                    }
+                    return null;
+                });
+                _actionQueueWaitEvent.Set();
+            }
+            eventSlim.Wait();
 
-            //传递弱引用到工作线程，避免强引用，使析构函数能够触发
-            _thread.Start(new WeakReference<ExclusiveThreadTaskScheduler>(this));
-            _threadId = _thread.ManagedThreadId;
+            if (exception != null)
+            {
+                throw exception;
+            }
+        }
+        else
+        {
+            action();
+        }
+    }
+
+    #endregion Public 方法
+
+    #region Private 方法
+
+    private static void InternalWork(object? state)
+    {
+        var (RunningToken, WaitEvent, TaskQueue, TryExecuteTaskAction) = DeconstructionState(state);
+
+        while (!RunningToken.IsCancellationRequested)
+        {
+            WaitEvent.WaitOne();
+            if (RunningToken.IsCancellationRequested)
+            {
+                return;
+            }
+
+            var shouldLoop = true;
+            Func<Task?>? function = null;
+
+            while (shouldLoop
+                   && !RunningToken.IsCancellationRequested)
+            {
+                lock (TaskQueue)
+                {
+                    shouldLoop = TaskQueue.TryDequeue(out function);
+                }
+
+                if (!shouldLoop
+                    || function is null)
+                {
+                    break;
+                }
+
+                //HACK  此处是否会出现异常，导致工作线程终止
+                var task = function();
+                if (task != null)
+                {
+                    TryExecuteTaskAction(task);
+                }
+            }
         }
 
-        #endregion Public 构造函数
-
-        #region Public 方法
-
-        /// <summary>
-        /// 在此调度器的独占线程上同步执行委托
-        /// </summary>
-        /// <param name="action"></param>
-        public void Run(Action action)
+        static (CancellationToken RunningToken, AutoResetEvent WaitEvent, Queue<Func<Task?>> TaskQueue, Action<Task> TryExecuteTaskAction) DeconstructionState(object? state)
         {
-            ThrowIfDisposed();
-
-            if (InvokeRequired)
+            if (state is WeakReference<ExclusiveThreadTaskScheduler> schedulerWeakReference
+                && schedulerWeakReference.TryGetTarget(out var taskScheduler)
+                && taskScheduler is not null)
             {
-                using ManualResetEventSlim eventSlim = new(false);
-                Exception? exception = null;
-                lock (_actionQueue)
+                Action<Task> tryExecuteTaskAction = task =>
                 {
-                    _actionQueue.Enqueue(() =>
+                    if (schedulerWeakReference.TryGetTarget(out var scheduler))
                     {
-                        try
-                        {
-                            action();
-                        }
-                        catch (Exception ex)
-                        {
-                            exception = ex;
-                        }
-                        finally
-                        {
-                            eventSlim.Set();
-                        }
-                        return null;
-                    });
-                    _actionQueueWaitEvent.Set();
-                }
-                eventSlim.Wait();
-
-                if (exception != null)
-                {
-                    throw exception;
-                }
+                        scheduler.TryExecuteTask(task);
+                    }
+                    else
+                    {
+                        throw new ObjectDisposedException(nameof(taskScheduler));
+                    }
+                };
+                return (taskScheduler._runningToken, taskScheduler._actionQueueWaitEvent, taskScheduler._actionQueue, tryExecuteTaskAction);
             }
             else
             {
-                action();
+                throw new ArgumentException("必须将 Scheduler 弱引用传递给工作线程。");
             }
         }
+    }
 
-        #endregion Public 方法
+    #endregion Private 方法
 
-        #region Private 方法
+    #region TaskScheduler
 
-        private static void InternalWork(object? state)
+    // 作为 ConcurrentHashSet<Task> 的替代方案
+    private readonly ConcurrentDictionary<Task, byte> _tasks = new();
+
+    /// <inheritdoc/>
+    public override int MaximumConcurrencyLevel => 1;
+
+    /// <inheritdoc/>
+    protected override IEnumerable<Task>? GetScheduledTasks() => _tasks.Keys;
+
+    /// <inheritdoc/>
+    protected override void QueueTask(Task task)
+    {
+        ThrowIfDisposed();
+
+        _tasks.TryAdd(task, 0);
+
+        task.ContinueWith(innerTask =>
         {
-            var (RunningToken, WaitEvent, TaskQueue, TryExecuteTaskAction) = DeconstructionState(state);
+            _tasks.TryRemove(innerTask, out var _);
+        });
 
-            while (!RunningToken.IsCancellationRequested)
-            {
-                WaitEvent.WaitOne();
-                if (RunningToken.IsCancellationRequested)
-                {
-                    return;
-                }
-
-                var shouldLoop = true;
-                Func<Task?>? function = null;
-
-                while (shouldLoop
-                       && !RunningToken.IsCancellationRequested)
-                {
-                    lock (TaskQueue)
-                    {
-                        shouldLoop = TaskQueue.TryDequeue(out function);
-                    }
-
-                    if (!shouldLoop
-                        || function is null)
-                    {
-                        break;
-                    }
-
-                    //HACK  此处是否会出现异常，导致工作线程终止
-                    var task = function();
-                    if (task != null)
-                    {
-                        TryExecuteTaskAction(task);
-                    }
-                }
-            }
-
-            static (CancellationToken RunningToken, AutoResetEvent WaitEvent, Queue<Func<Task?>> TaskQueue, Action<Task> TryExecuteTaskAction) DeconstructionState(object? state)
-            {
-                if (state is WeakReference<ExclusiveThreadTaskScheduler> schedulerWeakReference
-                    && schedulerWeakReference.TryGetTarget(out var taskScheduler)
-                    && taskScheduler is not null)
-                {
-                    Action<Task> tryExecuteTaskAction = task =>
-                    {
-                        if (schedulerWeakReference.TryGetTarget(out var scheduler))
-                        {
-                            scheduler.TryExecuteTask(task);
-                        }
-                        else
-                        {
-                            throw new ObjectDisposedException(nameof(taskScheduler));
-                        }
-                    };
-                    return (taskScheduler._runningToken, taskScheduler._actionQueueWaitEvent, taskScheduler._actionQueue, tryExecuteTaskAction);
-                }
-                else
-                {
-                    throw new ArgumentException("必须将 Scheduler 弱引用传递给工作线程。");
-                }
-            }
+        lock (_actionQueue)
+        {
+            _actionQueue.Enqueue(() => task);
+            _actionQueueWaitEvent.Set();
         }
+    }
 
-        #endregion Private 方法
+    /// <inheritdoc/>
+    protected override bool TryExecuteTaskInline(Task task, bool taskWasPreviouslyQueued) => false;
 
-        #region TaskScheduler
+    #endregion TaskScheduler
 
-        // 作为 ConcurrentHashSet<Task> 的替代方案
-        private readonly ConcurrentDictionary<Task, byte> _tasks = new();
+    #region Dispose
 
-        /// <inheritdoc/>
-        public override int MaximumConcurrencyLevel => 1;
+    /// <summary>
+    /// 析构函数
+    /// </summary>
+    ~ExclusiveThreadTaskScheduler()
+    {
+        Dispose(disposing: false);
+    }
 
-        /// <inheritdoc/>
-        protected override IEnumerable<Task>? GetScheduledTasks() => _tasks.Keys;
+    /// <inheritdoc/>
+    public void Dispose()
+    {
+        Dispose(disposing: true);
+        GC.SuppressFinalize(this);
+    }
 
-        /// <inheritdoc/>
-        protected override void QueueTask(Task task)
+    /// <inheritdoc/>
+    protected virtual void Dispose(bool disposing)
+    {
+        if (!_disposedValue)
         {
-            ThrowIfDisposed();
+            Debug.WriteLine("ExclusiveThreadTaskScheduler Disposed");
 
-            _tasks.TryAdd(task, 0);
-
-            task.ContinueWith(innerTask =>
-            {
-                _tasks.TryRemove(innerTask, out var _);
-            });
+            _runningCancellationTokenSource.Cancel();
+            _actionQueueWaitEvent.Set();
 
             lock (_actionQueue)
             {
-                _actionQueue.Enqueue(() => task);
-                _actionQueueWaitEvent.Set();
+                _actionQueue.Clear();
             }
+
+            _actionQueueWaitEvent.Dispose();
+            _runningCancellationTokenSource.Dispose();
+
+            _disposedValue = true;
         }
-
-        /// <inheritdoc/>
-        protected override bool TryExecuteTaskInline(Task task, bool taskWasPreviouslyQueued) => false;
-
-        #endregion TaskScheduler
-
-        #region Dispose
-
-        /// <summary>
-        /// 析构函数
-        /// </summary>
-        ~ExclusiveThreadTaskScheduler()
-        {
-            Dispose(disposing: false);
-        }
-
-        /// <inheritdoc/>
-        public void Dispose()
-        {
-            Dispose(disposing: true);
-            GC.SuppressFinalize(this);
-        }
-
-        /// <inheritdoc/>
-        protected virtual void Dispose(bool disposing)
-        {
-            if (!_disposedValue)
-            {
-                Debug.WriteLine("ExclusiveThreadTaskScheduler Disposed");
-
-                _runningCancellationTokenSource.Cancel();
-                _actionQueueWaitEvent.Set();
-
-                lock (_actionQueue)
-                {
-                    _actionQueue.Clear();
-                }
-
-                _actionQueueWaitEvent.Dispose();
-                _runningCancellationTokenSource.Dispose();
-
-                _disposedValue = true;
-            }
-        }
-
-        private void ThrowIfDisposed()
-        {
-            if (_disposedValue)
-            {
-                throw new ObjectDisposedException(nameof(_thread));
-            }
-        }
-
-        #endregion Dispose
     }
+
+    private void ThrowIfDisposed()
+    {
+        if (_disposedValue)
+        {
+            throw new ObjectDisposedException(nameof(_thread));
+        }
+    }
+
+    #endregion Dispose
 }
