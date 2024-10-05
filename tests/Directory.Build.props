@@ -7,15 +7,10 @@
 
   <ItemGroup>
 		<Using Include="Microsoft.VisualStudio.TestTools.UnitTesting"/>
-		
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.*" />
-    <PackageReference Include="MSTest.TestAdapter" Version="3.*" />
-    <PackageReference Include="MSTest.TestFramework" Version="3.*" />
-    <PackageReference Include="coverlet.collector" Version="3.*" PrivateAssets="all" />
   </ItemGroup>
 
   <PropertyGroup>
-    <TargetFrameworks>net6.0;net7.0;netcoreapp3.1</TargetFrameworks>
+    <TargetFrameworks>net6.0;net7.0;net8.0</TargetFrameworks>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 </Project>
